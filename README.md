@@ -15,11 +15,11 @@ A sleek, modern notes-taking application built with **FastAPI** (backend) and va
 
 ## Tech Stack
 
-| Layer    | Technology                                        |
-| -------- | ------------------------------------------------- |
-| Backend  | Python 3.11+, FastAPI, SQLAlchemy, PostGreSQL     |
-| Frontend | HTML5, CSS3 (custom properties), vanilla JS       |
-| Database | PostgreSQL                                        |
+| Layer    | Technology                                  |
+| -------- | ------------------------------------------- |
+| Backend  | Python 3.11+, FastAPI, SQLAlchemy,          |
+| Frontend | HTML5, CSS3 (custom properties), vanilla JS |
+| Database | PostgreSQL                                  |
 
 ## Additional Note Fields (suggested)
 
