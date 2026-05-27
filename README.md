@@ -1,4 +1,4 @@
-# 006_Notes_Application
+# Notes Application
 
 Application for taking notes. It allows searching notes along side.
 
