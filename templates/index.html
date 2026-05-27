@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notes App</title>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-scroll">
+        <div class="sidebar-header">
+          <h1 class="logo">
+            <svg class="logo-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            <span class="logo-text">Notes</span>
+          </h1>
+          <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar" title="Toggle sidebar">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="sidebar-section all-notes-section" data-tooltip="All Notes" id="allNotesSection">
+          <div class="section-header">
+            <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+            <h2>Show All Notes</h2>
+          </div>
+        </div>
+
+        <div class="sidebar-section" data-tooltip="Categories">
+          <div class="section-header">
+            <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+            </svg>
+            <h2>Categories</h2>
+            <button class="btn-icon" id="addCategoryBtn" aria-label="Add category">+</button>
+          </div>
+          <ul class="category-list" id="categoryList"></ul>
+        </div>
+
+        <div class="sidebar-section" data-tooltip="Sub-Categories">
+          <div class="section-header">
+            <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 7h.01M7 3h5a2 2 0 012 2v2l5 5-7 7-5-5V5a2 2 0 012-2z"/>
+            </svg>
+            <h2>Sub-Categories</h2>
+            <button class="btn-icon" id="addSubCategoryBtn" aria-label="Add sub-category">+</button>
+          </div>
+          <ul class="sub-category-list" id="subCategoryList"></ul>
+        </div>
+
+        <div class="sidebar-section backup-section" data-tooltip="Backup" id="backupSection">
+          <div class="section-header">
+            <svg class="section-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <h2>Backup Database</h2>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-btn theme-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="sun-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="main-header">
+        <div class="search-bar">
+          <svg viewBox="0 0 24 24" width="18" height="18" class="search-icon">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"/>
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Search notes..." autocomplete="off">
+        </div>
+        <div class="filter-group">
+          <select id="priorityFilter">
+            <option value="">All Priorities</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <label class="archive-toggle">
+            <input type="checkbox" id="showArchived">
+            <span>Show archived</span>
+          </label>
+          <div class="view-toggle" id="viewToggle">
+            <button class="view-btn active" data-view="table" title="Table view">
+              <svg viewBox="0 0 24 24" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            </button>
+            <button class="view-btn" data-view="cards" title="Cards view">
+              <svg viewBox="0 0 24 24" width="16" height="16"><rect x="3" y="3" width="7" height="8" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><rect x="14" y="3" width="7" height="8" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><rect x="3" y="15" width="7" height="6" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><rect x="14" y="15" width="7" height="6" rx="1" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            </button>
+          </div>
+          <button class="btn-primary" id="newNoteBtn">+ New Note</button>
+        </div>
+      </header>
+
+      <div class="table-wrap" id="tableView">
+        <table class="notes-table" id="notesTable">
+          <thead>
+            <tr>
+              <th class="th-actions">Actions</th>
+              <th>Title</th>
+              <th>Note</th>
+              <th>Category / Sub-Category</th>
+              <th>Priority</th>
+              <th>Date</th>
+              <th>Tags</th>
+            </tr>
+          </thead>
+          <tbody id="notesBody"></tbody>
+        </table>
+      </div>
+
+      <div class="cards-wrap" id="cardsView" style="display:none;">
+        <div class="notes-grid" id="notesGrid"></div>
+      </div>
+
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="8" y="6" width="32" height="38" rx="3" stroke-linejoin="round"/>
+          <path d="M16 16h16M16 24h16M16 32h10" stroke-linecap="round"/>
+        </svg>
+        <p>No notes found</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Note Modal -->
+  <div class="modal-overlay" id="noteModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">New Note</h2>
+        <button class="btn-icon modal-close" id="modalClose">&times;</button>
+      </div>
+      <form id="noteForm">
+        <input type="hidden" id="noteId">
+        <div class="form-group">
+          <label for="noteTitle">Title</label>
+          <input type="text" id="noteTitle" required placeholder="Note title">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="noteCategory">Category</label>
+            <select id="noteCategory"></select>
+          </div>
+          <div class="form-group">
+            <label for="noteSubCategory">Sub-Category</label>
+            <select id="noteSubCategory"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="notePriority">Priority</label>
+            <select id="notePriority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="noteDate">Date</label>
+            <input type="date" id="noteDate">
+          </div>
+          <div class="form-group">
+            <label for="noteColor">Color</label>
+            <input type="color" id="noteColor" value="#4f46e5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="noteTags">Tags (comma separated)</label>
+          <input type="text" id="noteTags" placeholder="e.g. work, personal, ideas">
+        </div>
+        <div class="form-group">
+          <label for="noteText">Note</label>
+          <textarea id="noteText" rows="6" required placeholder="Write your note here..."></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="modalCancel">Cancel</button>
+          <button type="submit" class="btn-primary" id="modalSubmit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div class="modal-overlay" id="categoryModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 id="categoryModalTitle">New Category</h2>
+        <button class="btn-icon modal-close" id="categoryModalClose">&times;</button>
+      </div>
+      <form id="categoryForm">
+        <div class="form-group">
+          <label for="categoryName">Name</label>
+          <input type="text" id="categoryName" required placeholder="Category name">
+        </div>
+        <div class="form-group">
+          <label for="categoryDescription">Description</label>
+          <textarea id="categoryDescription" rows="3" placeholder="Optional description"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="categoryModalCancel">Cancel</button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sub-Category Modal -->
+  <div class="modal-overlay" id="subCategoryModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2>New Sub-Category</h2>
+        <button class="btn-icon modal-close" id="subCategoryModalClose">&times;</button>
+      </div>
+      <form id="subCategoryForm">
+        <div class="form-group">
+          <label for="subCategoryParent">Parent Category</label>
+          <select id="subCategoryParent" required></select>
+        </div>
+        <div class="form-group">
+          <label for="subCategoryName">Name</label>
+          <input type="text" id="subCategoryName" required placeholder="Sub-category name">
+        </div>
+        <div class="form-group">
+          <label for="subCategoryDescription">Description</label>
+          <textarea id="subCategoryDescription" rows="3" placeholder="Optional description"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="subCategoryModalCancel">Cancel</button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
