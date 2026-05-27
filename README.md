@@ -13,16 +13,17 @@ A sleek, modern notes-taking application built with **FastAPI** (backend) and va
 - **Search & Filter** — Filter by category, sub-category, priority, archived status, or full-text search
 - **Dark / Light Theme** — Toggle with Sun/Moon icon, persisted in localStorage
 - **Responsive** — Works on desktop and mobile
+- **Structured Data** - Uses SQL Database to stored data. PostGreSQL is used in current implementation.  
 
 ## Tech Stack
 
 | Layer    | Technology                                  |
 | -------- | ------------------------------------------- |
-| Backend  | Python 3.11+, FastAPI, SQLAlchemy           |
+| Backend  | Python 3.11+, FastAPI, SQLAlchemy,          |
 | Frontend | HTML5, CSS3 (custom properties), vanilla JS |
 | Database | PostgreSQL                                  |
 
-## Additional Note Fields (suggested)
+## Additional Note Fields 
 
 | Field         | Type    | Description                                |
 | ------------- | ------- | ------------------------------------------ |
@@ -75,16 +76,16 @@ FastAPI auto-generates interactive docs at [http://localhost:8000/docs](http://l
 
 ```
 notes_app/
-├── main.py          # FastAPI application & routes
-├── database.py      # SQLAlchemy engine & session
-├── models.py        # ORM models (Category, SubCategory, Note)
-├── schemas.py       # Pydantic request/response schemas
+├── main.py              # FastAPI application & routes
+├── database.py          # SQLAlchemy engine & session
+├── models.py            # ORM models (Category, SubCategory, Note)
+├── schemas.py           # Pydantic request/response schemas
 ├── requirements.txt
 ├── README.md
 ├── templates/
-│   └── index.html   # Single-page application UI
+│   └── index.html       # Single-page application UI
 └── static/
-    ├── style.css    # Theme-aware styles
+    ├── style.css        # Theme-aware styles
     ├── script.js    # Frontend logic
     └── favicon.ico
 ```
