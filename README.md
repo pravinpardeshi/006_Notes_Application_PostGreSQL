@@ -1,4 +1,6 @@
-# Notes App
+# 006_Notes_Application
+
+Application for taking notes. It allows searching notes along side.
 
 A sleek, modern notes-taking application built with **FastAPI** (backend) and vanilla **HTML/CSS/JavaScript** (frontend), backed by **PostgreSQL**.
 

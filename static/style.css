@@ -384,8 +384,15 @@ body {
   padding: 0.35rem;
 }
 
-.sidebar.collapsed .sidebar-toggle svg {
-  transform: rotate(180deg);
+.pin-icon {
+  color: #ef4444;
+}
+.pin-icon path {
+  transition: fill .2s ease-in-out;
+  fill: currentColor;
+}
+.sidebar.collapsed .pin-icon path {
+  fill: transparent;
 }
 
 .sidebar.collapsed .sidebar-section:hover {
@@ -465,8 +472,8 @@ body {
   padding: 0.4rem;
 }
 
-.sidebar.collapsed:hover .sidebar-toggle svg {
-  transform: none;
+.sidebar.collapsed:hover .pin-icon path {
+  fill: transparent;
 }
 
 .sidebar.collapsed:hover .section-header {
@@ -1062,7 +1069,7 @@ body {
   .sidebar.collapsed .sub-category-list,
   .sidebar.collapsed .btn-icon { display: revert; }
   .sidebar.collapsed .sidebar-header { flex-direction: row; }
-  .sidebar.collapsed .sidebar-toggle svg { transform: none; }
+  .sidebar.collapsed .pin-icon path { fill: currentColor; }
   .sidebar.collapsed .sidebar-section:hover::after { display: none; }
   .main-content {
     margin-left: 0 !important;
