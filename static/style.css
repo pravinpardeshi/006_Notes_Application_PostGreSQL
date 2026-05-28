@@ -240,6 +240,9 @@ body {
 #backupSection .section-content.open {
   display: flex;
 }
+.sidebar.collapsed #backupSection .section-content.open {
+  display: none;
+}
 .sidebar-action {
   display: flex;
   align-items: center;
