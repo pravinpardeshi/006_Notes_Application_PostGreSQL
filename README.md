@@ -10,8 +10,10 @@ A sleek, modern notes-taking application built with **FastAPI** (backend) and va
 - **Rich Note Fields** — Title, text, priority (Low/Medium/High), tags, color labels, archived flag
 - **Auto Date** — Current date is pre-filled when creating a note
 - **Full CRUD** — Create, read, update, and archive/delete notes
-- **Search & Filter** — Filter by category, sub-category, priority, archived status, or full-text search
+- **Search & Filter** — Filter by category, sub-category, priority, archived status, or full-text search on title + body + tags
 - **Dark / Light Theme** — Toggle with Sun/Moon icon, persisted in localStorage
+- **Database Backup** — Download a full PostgreSQL SQL dump via `pg_dump` from the sidebar
+- **Database Restore** — Upload a previous `.sql` backup to restore data via `psql`
 - **Responsive** — Works on desktop and mobile
 - **Structured Data** - Uses SQL Database to stored data. PostGreSQL is used in current implementation.  
 
@@ -72,6 +74,24 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 
 FastAPI auto-generates interactive docs at [http://localhost:8000/docs](http://localhost:8000/docs).
 
+## Backup & Restore
+
+Both features are accessible from the **Backup** section in the sidebar. Click the section header to expand it and reveal the options.
+
+### Download Backup
+
+Click **Download** (or the backup icon in the collapsed sidebar) to download a full PostgreSQL SQL dump (`pg_dump`) of the current database. The file is named `notes_backup_YYYY-MM-DD.sql`.
+
+Requires `pg_dump` to be installed on the server.
+
+### Restore Backup
+
+Click **Restore** and select a `.sql` backup file. The file is uploaded and applied via `psql`, restoring all tables and data.
+
+Requires `psql` to be installed on the server.
+
+> **Warning:** Restoring overwrites existing data. There is no undo.
+
 ## Project Structure
 
 ```
@@ -80,6 +100,7 @@ notes_app/
 ├── database.py          # SQLAlchemy engine & session
 ├── models.py            # ORM models (Category, SubCategory, Note)
 ├── schemas.py           # Pydantic request/response schemas
+├── init_db.sql          # PostgreSQL schema with enum & indexes
 ├── requirements.txt
 ├── README.md
 ├── templates/
