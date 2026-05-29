@@ -201,10 +201,10 @@ body {
   display: none;
 }
 
-#backupSection .chevron {
+.sidebar-section .chevron {
   transition: transform 0.2s ease;
 }
-#backupSection.accordion-open .chevron {
+.sidebar-section.accordion-open .chevron {
   transform: rotate(90deg);
 }
 
@@ -257,6 +257,39 @@ body {
 }
 .sidebar-action svg {
   flex-shrink: 0;
+}
+
+/* ── About Section ────────────────────────────────────────────────────────── */
+#aboutSection .section-content {
+  padding: 0.25rem 0.5rem;
+}
+.about-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.78rem;
+}
+.about-label {
+  color: var(--sidebar-text);
+  font-weight: 500;
+}
+.about-value {
+  color: var(--sidebar-text-bright);
+  font-weight: 600;
+}
+/* expanded sidebar: show only when accordion is open */
+.sidebar:not(.collapsed) #aboutSection.accordion-open .section-content,
+.sidebar.collapsed:hover #aboutSection.accordion-open .section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+/* collapsed sidebar: hidden by default */
+.sidebar.collapsed #aboutSection .section-content,
+.sidebar:not(.collapsed) #aboutSection:not(.accordion-open) .section-content {
+  display: none;
 }
 
 .section-header h2 {

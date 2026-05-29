@@ -93,9 +93,11 @@ document.getElementById("backupSection")?.addEventListener("click", (e) => {
   }
 });
 
-document.querySelector("#backupSection .chevron")?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  document.getElementById("backupSection")?.classList.toggle("accordion-open");
+document.querySelectorAll(".sidebar-section .chevron").forEach((chevron) => {
+  chevron.addEventListener("click", (e) => {
+    e.stopPropagation();
+    chevron.closest(".sidebar-section")?.classList.toggle("accordion-open");
+  });
 });
 
 document.getElementById("backupDownload")?.addEventListener("click", (e) => {
