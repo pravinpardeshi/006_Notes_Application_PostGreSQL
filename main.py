@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -68,7 +69,7 @@ async def favicon():
 def backup():
     today = date.today().isoformat()
     result = subprocess.run(
-        ["pg_dump", "--no-owner", "--no-acl", f"--dbname={DATABASE_URL}"],
+        ["pg_dump", "--no-owner", "--no-acl", "--clean", "--if-exists", f"--dbname={DATABASE_URL}"],
         capture_output=True, text=True,
     )
     if result.returncode != 0:
@@ -80,16 +81,133 @@ def backup():
     )
 
 
+def _make_sql_idempotent(sql: str) -> str:
+    """Pre-process SQL to prevent "already exists" errors on restore."""
+
+    def _wrap_enum_safe(sql: str) -> str:
+        lines = sql.split("\n")
+        result = []
+        in_do_block = 0
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+            if re.match(r"DO\s+\$\$\s+BEGIN", stripped, re.IGNORECASE):
+                in_do_block += 1
+                result.append(line)
+                i += 1
+                continue
+            if stripped == "END $$;" and in_do_block:
+                in_do_block -= 1
+                result.append(line)
+                i += 1
+                continue
+            if not in_do_block and re.match(
+                r"CREATE\s+TYPE\s+((?:public\.)?\w+)\s+AS\s+ENUM",
+                stripped,
+                re.IGNORECASE,
+            ):
+                type_lines = [line]
+                j = i + 1
+                if ";" not in line:
+                    while j < len(lines) and ";" not in lines[j]:
+                        type_lines.append(lines[j])
+                        j += 1
+                    if j < len(lines):
+                        type_lines.append(lines[j])
+                        j += 1
+                full = " ".join(l.strip() for l in type_lines)
+                m = re.match(
+                    r"CREATE\s+TYPE\s+((?:public\.)?\w+)\s+AS\s+ENUM\s*\((.*)\)\s*;",
+                    full,
+                    re.IGNORECASE,
+                )
+                if m:
+                    result.append("DO $$ BEGIN")
+                    result.append(
+                        f"    CREATE TYPE {m.group(1)} AS ENUM ({m.group(2)});"
+                    )
+                    result.append("EXCEPTION")
+                    result.append("    WHEN duplicate_object THEN NULL;")
+                    result.append("END $$;")
+                    i = j
+                    continue
+            result.append(line)
+            i += 1
+        return "\n".join(result)
+
+    sql = _wrap_enum_safe(sql)
+    sql = re.sub(
+        r'\bCREATE\s+(OR\s+REPLACE\s+)?FUNCTION\b',
+        'CREATE OR REPLACE FUNCTION',
+        sql,
+        flags=re.IGNORECASE,
+    )
+    sql = re.sub(
+        r'\bCREATE\s+TABLE\b(?!\s+IF\s+NOT\s+EXISTS)',
+        'CREATE TABLE IF NOT EXISTS',
+        sql,
+        flags=re.IGNORECASE,
+    )
+    sql = re.sub(
+        r'\bCREATE\s+SEQUENCE\b(?!\s+IF\s+NOT\s+EXISTS)',
+        'CREATE SEQUENCE IF NOT EXISTS',
+        sql,
+        flags=re.IGNORECASE,
+    )
+    table_names = [
+        m.group(1)
+        for m in re.finditer(
+            r'COPY\s+((?:public\.)?\w+)\s*(?:\([^)]*\))?\s+FROM\s+stdin;',
+            sql,
+            flags=re.IGNORECASE,
+        )
+    ]
+    seen = set()
+    truncate_stmt = ""
+    for t in table_names:
+        if t not in seen:
+            truncate_stmt += f"TRUNCATE TABLE {t} CASCADE;\n"
+            seen.add(t)
+    sql = truncate_stmt + sql
+    sql = re.sub(
+        r'CREATE\s+TRIGGER\s+(\w+)\s+.*?\s+ON\s+((?:public\.)?\w+)',
+        lambda m: f"DROP TRIGGER IF EXISTS {m.group(1)} ON {m.group(2)};\n{m.group(0)}",
+        sql,
+        flags=re.IGNORECASE,
+    )
+    sql = re.sub(
+        r'ALTER\s+TABLE\s+(?:ONLY\s+)?((?:public\.)?\w+)\s+ADD\s+CONSTRAINT\s+(\w+)',
+        lambda m: f"ALTER TABLE {m.group(1)} DROP CONSTRAINT IF EXISTS {m.group(2)} CASCADE;\n{m.group(0)}",
+        sql,
+        flags=re.IGNORECASE,
+    )
+    sql = re.sub(
+        r'\bCREATE\s+INDEX\b(?!\s+IF\s+NOT\s+EXISTS)',
+        'CREATE INDEX IF NOT EXISTS',
+        sql,
+        flags=re.IGNORECASE,
+    )
+    sql = (
+        "SET session_replication_role = replica;\n\n"
+        + sql
+        + "\n\nSET session_replication_role = default;"
+    )
+    return sql
+
+
 @app.post("/api/restore")
 def restore(file: UploadFile = File(...)):
     if not file.filename.endswith(".sql"):
         raise HTTPException(400, "Only .sql files are accepted")
     try:
-        with tempfile.NamedTemporaryFile(mode="wb", suffix=".sql", delete=False) as tmp:
-            tmp.write(file.file.read())
+        raw_sql = file.file.read().decode("utf-8")
+        safe_sql = _make_sql_idempotent(raw_sql)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".sql", delete=False, encoding="utf-8") as tmp:
+            tmp.write(safe_sql)
             tmp_path = tmp.name
         result = subprocess.run(
-            ["psql", "--dbname", DATABASE_URL, "--file", tmp_path, "--echo-errors"],
+            ["psql", "-v", "ON_ERROR_STOP=1", "--dbname", DATABASE_URL, "--file", tmp_path, "--echo-errors"],
             capture_output=True, text=True,
         )
         if result.returncode != 0:
@@ -101,7 +219,6 @@ def restore(file: UploadFile = File(...)):
         raise HTTPException(500, f"Restore failed: {str(e)}")
     finally:
         try:
-            import os
             os.unlink(tmp_path)
         except Exception:
             pass
