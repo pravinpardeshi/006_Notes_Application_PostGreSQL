@@ -1268,11 +1268,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity var(--transition);
-}
-.image-grid .image-item:hover .image-delete {
-  opacity: 1;
 }
 .image-grid .image-item .image-delete:hover {
   background: var(--danger);

@@ -183,7 +183,11 @@ function applyView() {
 
 /* ── Categories ────────────────────────────────────────────────────────────── */
 async function loadCategories() {
-  state.categories = await api.get("/api/categories");
+  try {
+    state.categories = await api.get("/api/categories");
+  } catch {
+    state.categories = [];
+  }
   renderCategories();
   populateCategoryDropdowns();
 }
@@ -213,7 +217,12 @@ function renderCategories() {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!confirm("Delete this category and all its sub-categories?")) return;
-      await api.del(`/api/categories/${btn.dataset.id}`);
+      try {
+        await api.del(`/api/categories/${btn.dataset.id}`);
+      } catch (err) {
+        alert("Failed to delete category: " + err.message);
+        return;
+      }
       state.selectedCategoryId = null;
       loadCategories();
       loadSubCategories();
@@ -226,23 +235,38 @@ function renderCategories() {
 async function loadSubCategories() {
   const params = new URLSearchParams();
   if (state.selectedCategoryId) params.set("category_id", state.selectedCategoryId);
-  state.subCategories = await api.get(`/api/sub_categories?${params}`);
+  try {
+    state.subCategories = await api.get(`/api/sub_categories?${params}`);
+  } catch {
+    state.subCategories = [];
+  }
   renderSubCategories();
 }
 
 function renderSubCategories() {
   allNotesSection.classList.toggle("active", state.selectedCategoryId === null && state.selectedSubCategoryId === null);
+
+  if (state.subCategories.length === 0) {
+    subCategoryList.innerHTML = '<li style="font-size:.8rem;color:var(--text-muted);cursor:default;">No sub-categories</li>';
+    return;
+  }
+
   subCategoryList.innerHTML = state.subCategories.map((s) => `
-    <li class="${state.selectedSubCategoryId === s.id ? "active" : ""}" data-id="${s.id}">
+    <li class="${state.selectedSubCategoryId === s.id ? "active" : ""}" data-id="${s.id}" data-category-id="${s.category_id}">
       <span class="sub-cat-name">${esc(s.name)}</span>
       <button class="delete-btn" data-action="delete-sub-category" data-id="${s.id}" title="Delete">&times;</button>
     </li>
-  `).join("") || '<li style="font-size:.8rem;color:var(--text-muted);cursor:default;">No sub-categories</li>';
+  `).join("");
 
   subCategoryList.querySelectorAll("li[data-id]").forEach((li) => {
     li.addEventListener("click", (e) => {
       if (e.target.closest(".delete-btn")) return;
       const id = parseInt(li.dataset.id);
+      const catId = parseInt(li.dataset.categoryId);
+      if (state.selectedCategoryId !== catId) {
+        state.selectedCategoryId = catId;
+        renderCategories();
+      }
       state.selectedSubCategoryId = state.selectedSubCategoryId === id ? null : id;
       renderSubCategories();
       loadNotes();
@@ -253,7 +277,12 @@ function renderSubCategories() {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!confirm("Delete this sub-category?")) return;
-      await api.del(`/api/sub_categories/${btn.dataset.id}`);
+      try {
+        await api.del(`/api/sub_categories/${btn.dataset.id}`);
+      } catch (err) {
+        alert("Failed to delete sub-category: " + err.message);
+        return;
+      }
       state.selectedSubCategoryId = null;
       loadSubCategories();
       loadNotes();
@@ -564,7 +593,7 @@ document.querySelectorAll("[id$='CategoryBtn'], [id$='SubCategoryBtn']").forEach
   if (btn.id === "addSubCategoryBtn") {
     btn.addEventListener("click", () => {
       subCategoryForm.reset();
-      populateCategoryDropdown(subCategoryParent);
+      populateCategoryDropdown(subCategoryParent, state.selectedCategoryId);
       subCategoryModal.classList.add("active");
     });
   }
@@ -576,10 +605,15 @@ function closeModal(overlay) {
 
 categoryForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  await api.post("/api/categories", {
-    name: categoryName.value.trim(),
-    description: categoryDescription.value.trim() || null,
-  });
+  try {
+    await api.post("/api/categories", {
+      name: categoryName.value.trim(),
+      description: categoryDescription.value.trim() || null,
+    });
+  } catch (err) {
+    alert("Failed to create category: " + err.message);
+    return;
+  }
   closeModal(categoryModal);
   loadCategories();
   loadSubCategories();
@@ -587,11 +621,16 @@ categoryForm.addEventListener("submit", async (e) => {
 
 subCategoryForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  await api.post("/api/sub_categories", {
-    name: subCategoryName.value.trim(),
-    description: subCategoryDescription.value.trim() || null,
-    category_id: parseInt(subCategoryParent.value),
-  });
+  try {
+    await api.post("/api/sub_categories", {
+      name: subCategoryName.value.trim(),
+      description: subCategoryDescription.value.trim() || null,
+      category_id: parseInt(subCategoryParent.value),
+    });
+  } catch (err) {
+    alert("Failed to create sub-category: " + err.message);
+    return;
+  }
   closeModal(subCategoryModal);
   loadSubCategories();
   loadNotes();
@@ -637,11 +676,13 @@ function populateCategoryDropdowns() {
   populateCategoryDropdown(noteCategory);
 }
 
-function populateCategoryDropdown(select) {
-  const val = select.value;
-  select.innerHTML = '<option value="">None</option>' +
-    state.categories.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
-  select.value = val;
+function populateCategoryDropdown(select, selectedId) {
+  const isSubCatParent = select.id === "subCategoryParent";
+  const opts = state.categories.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  select.innerHTML = isSubCatParent ? opts : '<option value="">None</option>' + opts;
+  if (selectedId) {
+    select.value = selectedId;
+  }
 }
 
 noteCategory.addEventListener("change", async () => {

@@ -1,8 +1,10 @@
+import io
 import os
 import re
 import shutil
 import subprocess
 import tempfile
+import zipfile
 from datetime import date, datetime
 from typing import List, Optional
 
@@ -74,10 +76,20 @@ def backup():
     )
     if result.returncode != 0:
         raise HTTPException(500, f"pg_dump failed: {result.stderr}")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("notes_backup.sql", result.stdout)
+        if os.path.isdir(UPLOAD_DIR):
+            for root, _dirs, files in os.walk(UPLOAD_DIR):
+                for fn in files:
+                    fp = os.path.join(root, fn)
+                    zf.write(fp, os.path.join("uploads", fn))
+    buf.seek(0)
     return Response(
-        content=result.stdout,
-        media_type="application/sql",
-        headers={"Content-Disposition": f'attachment; filename="notes_backup_{today}.sql"'},
+        content=buf.read(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="notes_backup_{today}.zip"'},
     )
 
 
@@ -198,20 +210,55 @@ def _make_sql_idempotent(sql: str) -> str:
 
 @app.post("/api/restore")
 def restore(file: UploadFile = File(...)):
-    if not file.filename.endswith(".sql"):
-        raise HTTPException(400, "Only .sql files are accepted")
+    name = file.filename or ""
+    if not (name.endswith(".sql") or name.endswith(".zip")):
+        raise HTTPException(400, "Only .sql or .zip files are accepted")
     try:
-        raw_sql = file.file.read().decode("utf-8")
+        data = file.file.read()
+    except Exception as e:
+        raise HTTPException(400, f"Failed to read file: {e}")
+
+    restore_dir = tempfile.mkdtemp()
+    sql_path = None
+    try:
+        if name.endswith(".zip"):
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                zf.extractall(restore_dir)
+            for fn in os.listdir(restore_dir):
+                if fn.endswith(".sql"):
+                    sql_path = os.path.join(restore_dir, fn)
+                    break
+            if not sql_path:
+                raise HTTPException(400, "No .sql file found in zip archive")
+            raw_sql = open(sql_path, encoding="utf-8").read()
+        else:
+            raw_sql = data.decode("utf-8")
+
         safe_sql = _make_sql_idempotent(raw_sql)
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".sql", delete=False, encoding="utf-8") as tmp:
-            tmp.write(safe_sql)
-            tmp_path = tmp.name
-        result = subprocess.run(
-            ["psql", "-v", "ON_ERROR_STOP=1", "--dbname", DATABASE_URL, "--file", tmp_path, "--echo-errors"],
-            capture_output=True, text=True,
-        )
-        if result.returncode != 0:
-            raise HTTPException(500, f"Restore failed: {result.stderr[:500]}")
+        tmp_sql = tempfile.NamedTemporaryFile(mode="w", suffix=".sql", delete=False, encoding="utf-8")
+        try:
+            tmp_sql.write(safe_sql)
+            tmp_sql.close()
+            result = subprocess.run(
+                ["psql", "-v", "ON_ERROR_STOP=1", "--dbname", DATABASE_URL, "--file", tmp_sql.name, "--echo-errors"],
+                capture_output=True, text=True,
+            )
+            if result.returncode != 0:
+                raise HTTPException(500, f"Restore failed: {result.stderr[:500]}")
+        finally:
+            try:
+                os.unlink(tmp_sql.name)
+            except Exception:
+                pass
+
+        uploads_src = os.path.join(restore_dir, "uploads")
+        if os.path.isdir(uploads_src):
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            for fn in os.listdir(uploads_src):
+                src = os.path.join(uploads_src, fn)
+                if os.path.isfile(src):
+                    shutil.copy2(src, os.path.join(UPLOAD_DIR, fn))
+
         return {"message": "Restore successful"}
     except HTTPException:
         raise
@@ -219,7 +266,7 @@ def restore(file: UploadFile = File(...)):
         raise HTTPException(500, f"Restore failed: {str(e)}")
     finally:
         try:
-            os.unlink(tmp_path)
+            shutil.rmtree(restore_dir, ignore_errors=True)
         except Exception:
             pass
 
