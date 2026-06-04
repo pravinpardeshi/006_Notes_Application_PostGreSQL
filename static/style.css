@@ -581,8 +581,12 @@ body {
 /* ── Main Content ──────────────────────────────────────────────────────────── */
 .main-content {
   flex: 1;
-  margin-left: 3rem;
+  margin-left: calc(var(--sidebar-width) + 1.5rem);
   padding: 1.5rem 2rem;
+  transition: margin-left .25s ease;
+}
+.app-container:has(.sidebar.collapsed) .main-content {
+  margin-left: calc(var(--sidebar-collapsed-width) + 1.5rem);
 }
 
 .main-header {
@@ -1327,6 +1331,7 @@ body {
   .sidebar.collapsed .pin-icon path,
   .sidebar.collapsed .pin-icon circle { fill: currentColor; }
   .sidebar.collapsed .sidebar-section:hover::after { display: none; }
+  .app-container:has(.sidebar.collapsed) .main-content,
   .main-content {
     margin-left: 0 !important;
   }
