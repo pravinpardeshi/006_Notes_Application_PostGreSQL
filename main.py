@@ -65,10 +65,10 @@ def health():
         db_status = "unhealthy"
         status = "unhealthy"
     return {
-        "status": status,
-        "application": "healthy",
-        "database": db_status,
-        "timestamp": datetime.now().strftime("%H:%M:%S"),
+        "Status": status,
+        "Application": "healthy",
+        "Database": db_status,
+        "Timestamp": datetime.now().strftime("%H:%M:%S"),
     }
 
 
