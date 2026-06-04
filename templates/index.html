@@ -85,8 +85,16 @@
               </svg>
               <span>Restore</span>
             </div>
+            <div class="sidebar-action" id="healthCheck">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span>Health Check</span>
+            </div>
           </div>
           <input type="file" id="restoreFileInput" accept=".sql,.zip" style="display:none">
+          <div class="health-popup" id="healthPopup"></div>
         </div>
 
         <div class="sidebar-section" data-tooltip="About" id="aboutSection">
@@ -312,6 +320,7 @@
   </div>
 
   <!-- Image Lightbox -->
+  <div class="health-popup-backdrop" id="healthBackdrop"></div>
   <div class="modal-overlay" id="imageLightbox">
     <div class="lightbox-content">
       <button class="lightbox-close" id="lightboxClose">&times;</button>

@@ -1366,3 +1366,58 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Health Popup ──────────────────────────────────────────────────────────── */
+.health-popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
+  min-width: 340px;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  font-size: .95rem;
+}
+.health-popup.show { display: block; }
+.health-popup h3 {
+  font-size: 1rem;
+  margin-bottom: .75rem;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.health-popup .row {
+  display: flex;
+  justify-content: space-between;
+  padding: .3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.health-popup .row:last-of-type { border-bottom: none; }
+.health-popup .label { color: var(--text-secondary); }
+.health-popup .value { font-weight: 600; }
+.health-popup .value.healthy { color: #22c55e; }
+.health-popup .value.unhealthy { color: var(--danger); }
+.health-popup .value.not_configured { color: var(--text-muted); }
+.health-popup .close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+}
+.health-popup .close:hover { color: var(--text-primary); }
+.health-popup-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: rgba(0,0,0,.2);
+}
+.health-popup-backdrop.show { display: block; }

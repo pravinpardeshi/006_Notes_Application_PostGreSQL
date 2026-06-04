@@ -51,6 +51,27 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory="templates")
 
 
+# ── Health Check ──────────────────────────────────────────────────────────────
+
+
+@app.get("/health")
+def health():
+    status = "healthy"
+    db_status = "healthy"
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = "unhealthy"
+        status = "unhealthy"
+    return {
+        "status": status,
+        "application": "healthy",
+        "database": db_status,
+        "timestamp": datetime.now().strftime("%H:%M:%S"),
+    }
+
+
 # ── Pages ────────────────────────────────────────────────────────────────────
 
 
@@ -273,7 +294,6 @@ def restore(file: UploadFile = File(...)):
 
 # ── Category CRUD ────────────────────────────────────────────────────────────
 
-
 @app.get("/api/categories", response_model=List[CategoryResponse])
 def list_categories(db: Session = Depends(get_db)):
     return db.query(Category).order_by(Category.name).all()
@@ -301,7 +321,6 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
 
 
 # ── SubCategory CRUD ─────────────────────────────────────────────────────────
-
 
 @app.get("/api/sub_categories", response_model=List[SubCategoryResponse])
 def list_sub_categories(
@@ -335,7 +354,6 @@ def delete_sub_category(sub_category_id: int, db: Session = Depends(get_db)):
 
 
 # ── Note CRUD ────────────────────────────────────────────────────────────────
-
 
 @app.get("/api/notes", response_model=List[NoteResponse])
 def list_notes(

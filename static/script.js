@@ -131,6 +131,42 @@ document.getElementById("restoreFileInput")?.addEventListener("change", async (e
   }
 });
 
+document.getElementById("healthCheck")?.addEventListener("click", async () => {
+  try {
+    const res = await fetch("/health");
+    const data = await res.json();
+    showHealthPopup(data);
+  } catch {
+    alert("Health check failed: server unreachable");
+  }
+});
+
+function showHealthPopup(data) {
+  let html = `<h3>
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+      <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+    System Health
+    <button class="close" id="healthClose">&times;</button>
+  </h3>`;
+  for (const [key, val] of Object.entries(data)) {
+    const cls = typeof val === "string" ? val.replace(/\s+/g, "_") : "";
+    html += `<div class="row"><span class="label">${key}</span><span class="value ${cls}">${val}</span></div>`;
+  }
+  const popup = document.getElementById("healthPopup");
+  popup.innerHTML = html;
+  popup.classList.add("show");
+  document.getElementById("healthBackdrop").classList.add("show");
+  document.getElementById("healthClose").addEventListener("click", closeHealthPopup);
+  document.getElementById("healthBackdrop").addEventListener("click", closeHealthPopup);
+}
+
+function closeHealthPopup() {
+  document.getElementById("healthPopup").classList.remove("show");
+  document.getElementById("healthBackdrop").classList.remove("show");
+}
+
 /* ── Sidebar ───────────────────────────────────────────────────────────────── */
 function initSidebar() {
   const pinned = localStorage.getItem("sidebarPinned") === "true";
