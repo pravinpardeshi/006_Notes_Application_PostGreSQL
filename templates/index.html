@@ -63,7 +63,7 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            <h2>Backup Data</h2>
+            <h2>Manage Data</h2>
             <svg class="chevron" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 18l6-6-6-6"/>
             </svg>
@@ -75,7 +75,7 @@
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              <span>Download</span>
+              <span>Take Backup</span>
             </div>
             <div class="sidebar-action" id="backupRestore">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -196,7 +196,11 @@
         <h2 id="modalTitle">New Note</h2>
         <button class="btn-icon modal-close" id="modalClose">&times;</button>
       </div>
-      <form id="noteForm">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="modalCancel">Cancel</button>
+        <button type="submit" class="btn-primary" form="noteForm">Save</button>
+      </div>
+      <form id="noteForm" class="modal-form-scroll">
         <input type="hidden" id="noteId">
         <div class="form-group">
           <label for="noteTitle">Title</label>
@@ -250,10 +254,6 @@
             <span>Click or drag images here</span>
             <input type="file" id="imageInput" accept="image/*" multiple hidden>
           </div>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn-secondary" id="modalCancel">Cancel</button>
-          <button type="submit" class="btn-primary" id="modalSubmit">Save</button>
         </div>
       </form>
     </div>
