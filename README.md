@@ -12,6 +12,8 @@ Create and store notes with images, organize with categories and sub-categories,
 - **Full CRUD** — Create, read, update, and archive/delete notes
 - **Search & Filter** — Filter by category, sub-category, priority, archived status, or full-text search on title + body + tags
 - **Dark / Light Theme** — Toggle with Sun/Moon icon, persisted in `localStorage`
+- **Three View Modes** — Table view (compact columns), Cards view (grid layout), and Full Note view (complete note text without truncation)
+- **Search & Filter** — Filter by category, sub-category, priority, archived status, or full-text search on title + body + tags; search bar includes a clear button
 - **Backup & Restore** — Manual download/restore from sidebar; supports both `.sql` and `.zip` (includes images) formats
 - **Automated Daily Backups** — Runs on server start and hourly thereafter; renames existing backup to today's date if data hasn't changed (no duplicate bloat)
 - **System Health Check** — Sidebar button shows live status of application, database, and timestamp
