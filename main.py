@@ -1,9 +1,13 @@
+import hashlib
 import io
+import json
 import os
 import re
 import shutil
 import subprocess
 import tempfile
+import threading
+import time
 import zipfile
 from datetime import date, datetime
 from typing import List, Optional
@@ -12,10 +16,10 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request,
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
-from database import DATABASE_URL, Base, engine, get_db
+from database import DATABASE_URL, Base, engine, get_db, SessionLocal
 from models import Category, Note, NoteImage, SubCategory
 from schemas import (
     CategoryCreate,
@@ -49,6 +53,101 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory="templates")
+
+BACKUP_DIR = "backups"
+os.makedirs(BACKUP_DIR, exist_ok=True)
+
+
+# ── Scheduled Daily Backup ────────────────────────────────────────────────────
+
+
+def _compute_change_key() -> str:
+    """Hash of latest timestamps and record counts to detect data changes."""
+    db = SessionLocal()
+    try:
+        latest_updated = db.query(func.max(Note.updated_at)).scalar()
+        note_count = db.query(func.count(Note.id)).scalar()
+        image_count = db.query(func.count(NoteImage.id)).scalar()
+        cat_count = db.query(func.count(Category.id)).scalar()
+        return hashlib.sha256(
+            f"{latest_updated}:{note_count}:{image_count}:{cat_count}".encode()
+        ).hexdigest()
+    finally:
+        db.close()
+
+
+def _create_backup_zip(path: str):
+    """Run pg_dump and write a zip archive to *path*."""
+    result = subprocess.run(
+        ["pg_dump", "--no-owner", "--no-acl", "--clean", "--if-exists", f"--dbname={DATABASE_URL}"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"pg_dump failed: {result.stderr}")
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("notes_backup.sql", result.stdout)
+        if os.path.isdir(UPLOAD_DIR):
+            for root, _dirs, files in os.walk(UPLOAD_DIR):
+                for fn in files:
+                    fp = os.path.join(root, fn)
+                    zf.write(fp, os.path.join("uploads", fn))
+
+
+def _last_backup_path() -> str | None:
+    """Return the most recent backup_YYYY-MM-DD.zip path, or None."""
+    entries = [f for f in os.listdir(BACKUP_DIR)
+               if re.match(r"backup_\d{4}-\d{2}-\d{2}\.zip$", f)]
+    if not entries:
+        return None
+    entries.sort(reverse=True)
+    return os.path.join(BACKUP_DIR, entries[0])
+
+
+def _read_meta(backup_path: str) -> dict | None:
+    meta_path = backup_path + ".meta"
+    if os.path.exists(meta_path):
+        with open(meta_path) as f:
+            return json.load(f)
+    return None
+
+
+def _write_meta(backup_path: str, meta: dict):
+    with open(backup_path + ".meta", "w") as f:
+        json.dump(meta, f)
+
+
+def run_scheduled_backup():
+    """Create today's backup if needed; rename previous if data unchanged."""
+    today = date.today().isoformat()
+    today_path = os.path.join(BACKUP_DIR, f"backup_{today}.zip")
+    if os.path.exists(today_path):
+        return
+
+    current_key = _compute_change_key()
+    latest = _last_backup_path()
+
+    if latest and os.path.exists(latest):
+        meta = _read_meta(latest)
+        if meta and meta.get("key") == current_key:
+            os.rename(latest, today_path)
+            os.rename(latest + ".meta", today_path + ".meta")
+            return
+
+    _create_backup_zip(today_path)
+    _write_meta(today_path, {"key": current_key})
+
+
+def _backup_loop():
+    """Background loop: run immediately, then check every hour."""
+    while True:
+        try:
+            run_scheduled_backup()
+        except Exception as exc:
+            print(f"[auto-backup] {exc}")
+        time.sleep(3600)
+
+
+threading.Thread(target=_backup_loop, daemon=True).start()
 
 
 # ── Health Check ──────────────────────────────────────────────────────────────
