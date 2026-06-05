@@ -572,6 +572,13 @@ body {
   height: 24px;
 }
 
+/* ── Colored Section Icons ─────────────────────────────────────────────────── */
+#allNotesSection .section-icon { color: #3b82f6; }
+.sidebar-section:nth-of-type(2) .section-icon { color: #f59e0b; }
+.sidebar-section:nth-of-type(3) .section-icon { color: #8b5cf6; }
+#backupSection .section-icon { color: #10b981; }
+#aboutSection .section-icon { color: #ec4899; }
+
 .sidebar.collapsed:hover .sidebar-footer {
   padding: 0.5rem;
 }
