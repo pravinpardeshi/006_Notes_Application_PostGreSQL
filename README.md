@@ -49,6 +49,14 @@ Set the `DATABASE_URL` environment variable (defaults to `postgresql://postgres:
 export DATABASE_URL="postgresql://user:password@localhost:5432/notes_app"
 ```
 
+All configuration is read from `config.py`, which pulls from environment variables:
+
+| Variable      | Default                                   | Description                      |
+| ------------- | ----------------------------------------- | -------------------------------- |
+| `DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/notes_app` | PostgreSQL connection string |
+| `UPLOAD_DIR`  | `uploads`                                 | Directory for uploaded images    |
+| `BACKUP_DIR`  | `backups`                                 | Directory for automated backups  |
+
 ### 4. Install dependencies
 
 ```bash
@@ -116,6 +124,7 @@ Click **Health Check** in the sidebar to see the current status of:
 ```
 notes_app/
 ├── main.py              # FastAPI application, routes, backup & restore
+├── config.py            # Configuration (reads from environment)
 ├── database.py          # SQLAlchemy engine & session
 ├── models.py            # ORM models (Category, SubCategory, Note, NoteImage)
 ├── schemas.py           # Pydantic request/response schemas

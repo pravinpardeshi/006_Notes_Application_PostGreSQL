@@ -19,7 +19,8 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
-from database import DATABASE_URL, Base, engine, get_db, SessionLocal
+from config import BACKUP_DIR, DATABASE_URL, UPLOAD_DIR
+from database import Base, engine, get_db, SessionLocal
 from models import Category, Note, NoteImage, SubCategory
 from schemas import (
     CategoryCreate,
@@ -47,14 +48,12 @@ with engine.connect() as conn:
 
 app = FastAPI(title="Notes App")
 
-UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 templates = Jinja2Templates(directory="templates")
 
-BACKUP_DIR = "backups"
 os.makedirs(BACKUP_DIR, exist_ok=True)
 
 
