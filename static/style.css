@@ -624,6 +624,24 @@ body {
 
 .search-icon { color: var(--text-muted); flex-shrink: 0; }
 
+.search-clear {
+  display: none;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0 .1rem;
+  border-radius: 3px;
+}
+.search-clear:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+.search-clear.visible { display: inline-flex; }
+
 .search-bar input {
   border: none;
   background: transparent;
@@ -948,6 +966,13 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.notes-table .td-note-full {
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 520px;
 }
 
 .notes-table .td-cat {

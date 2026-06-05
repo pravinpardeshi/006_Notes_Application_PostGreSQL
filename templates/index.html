@@ -139,6 +139,7 @@
             <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
           </svg>
           <input type="text" id="searchInput" placeholder="Search notes..." autocomplete="off">
+          <button class="search-clear" id="searchClear" aria-label="Clear search">&times;</button>
         </div>
         <div class="filter-group">
           <select id="priorityFilter">
@@ -157,6 +158,9 @@
             </button>
             <button class="view-btn" data-view="cards" title="Cards view">
               <svg viewBox="0 0 24 24" width="16" height="16"><rect x="3" y="3" width="7" height="8" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><rect x="14" y="3" width="7" height="8" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><rect x="3" y="15" width="7" height="6" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><rect x="14" y="15" width="7" height="6" rx="1" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            </button>
+            <button class="view-btn" data-view="full" title="Full note view">
+              <svg viewBox="0 0 24 24" width="16" height="16"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><line x1="8" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="17" x2="13" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>
           </div>
           <button class="btn-primary" id="newNoteBtn">+ New Note</button>
@@ -182,6 +186,19 @@
 
       <div class="cards-wrap" id="cardsView" style="display:none;">
         <div class="notes-grid" id="notesGrid"></div>
+      </div>
+
+      <div class="table-wrap" id="fullView" style="display:none;">
+        <table class="notes-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Note</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="fullBody"></tbody>
+        </table>
       </div>
 
       <div class="empty-state" id="emptyState" style="display:none;">

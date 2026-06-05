@@ -5,7 +5,7 @@ const state = {
   notes: [],
   selectedCategoryId: null,
   selectedSubCategoryId: null,
-  view: "table", // "table" | "cards"
+  view: "table", // "table" | "cards" | "full"
 };
 
 /* ── DOM refs ──────────────────────────────────────────────────────────────── */
@@ -22,7 +22,10 @@ const notesGrid = $("#notesGrid");
 const emptyState = $("#emptyState");
 const tableView = $("#tableView");
 const cardsView = $("#cardsView");
+const fullView = $("#fullView");
+const fullBody = $("#fullBody");
 const searchInput = $("#searchInput");
+const searchClear = $("#searchClear");
 const priorityFilter = $("#priorityFilter");
 const showArchived = $("#showArchived");
 const themeToggle = $("#themeToggle");
@@ -185,6 +188,7 @@ allNotesSection.addEventListener("click", () => {
   state.selectedCategoryId = null;
   state.selectedSubCategoryId = null;
   searchInput.value = "";
+  searchClear.classList.remove("visible");
   priorityFilter.value = "";
   showArchived.checked = false;
   renderCategories();
@@ -212,9 +216,9 @@ viewBtns.forEach((btn) => {
 });
 
 function applyView() {
-  const isTable = state.view === "table";
-  tableView.style.display = isTable ? "" : "none";
-  cardsView.style.display = isTable ? "none" : "block";
+  tableView.style.display = state.view === "table" ? "" : "none";
+  cardsView.style.display = state.view === "cards" ? "block" : "none";
+  fullView.style.display = state.view === "full" ? "" : "none";
 }
 
 /* ── Categories ────────────────────────────────────────────────────────────── */
@@ -342,7 +346,8 @@ function renderNotes() {
   const hasNotes = state.notes.length > 0;
   emptyState.style.display = hasNotes ? "none" : "flex";
   if (state.view === "table") renderNotesTable();
-  else renderNotesCards();
+  else if (state.view === "cards") renderNotesCards();
+  else renderNotesFull();
 }
 
 function renderNotesTable() {
@@ -454,6 +459,26 @@ function renderNotesCards() {
       loadNotes();
     });
     card.addEventListener("click", () => openNoteModal(id));
+  });
+}
+
+function renderNotesFull() {
+  const hasNotes = state.notes.length > 0;
+  fullBody.style.display = hasNotes ? "" : "none";
+  if (!hasNotes) { fullBody.innerHTML = ""; return; }
+
+  fullBody.innerHTML = state.notes.map((n) => {
+    const text = n.note_text.replace(/<[^>]*>/g, "");
+    return `<tr class="priority-${n.priority}${n.is_archived ? ' archived' : ''}" data-id="${n.id}">
+      <td class="td-title">${esc(n.title)}${n.is_archived ? ' <span class="archived-badge">archived</span>' : ''}</td>
+      <td class="td-note-full">${esc(text)}</td>
+      <td class="td-date">${n.note_date}</td>
+    </tr>`;
+  }).join("");
+
+  fullBody.querySelectorAll("tr[data-id]").forEach((row) => {
+    const id = parseInt(row.dataset.id);
+    row.addEventListener("click", () => openNoteModal(id));
   });
 }
 
@@ -737,6 +762,15 @@ async function populateSubCategoryDropdown(categoryId) {
 
 /* ── Filters ───────────────────────────────────────────────────────────────── */
 searchInput.addEventListener("input", debounce(loadNotes, 300));
+searchInput.addEventListener("input", () => {
+  searchClear.classList.toggle("visible", searchInput.value.length > 0);
+});
+searchClear.addEventListener("click", () => {
+  searchInput.value = "";
+  searchClear.classList.remove("visible");
+  searchInput.focus();
+  loadNotes();
+});
 priorityFilter.addEventListener("change", loadNotes);
 showArchived.addEventListener("change", loadNotes);
 
