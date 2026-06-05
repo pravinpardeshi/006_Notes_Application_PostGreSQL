@@ -65,6 +65,7 @@ class NoteBase(BaseModel):
     category_id: Optional[int] = None
     sub_category_id: Optional[int] = None
     note_date: date = date.today()
+    note_time: Optional[str] = None
 
     @field_validator("color")
     @classmethod
@@ -88,6 +89,7 @@ class NoteUpdate(BaseModel):
     category_id: Optional[int] = None
     sub_category_id: Optional[int] = None
     note_date: Optional[date] = None
+    note_time: Optional[str] = None
 
     @field_validator("color")
     @classmethod

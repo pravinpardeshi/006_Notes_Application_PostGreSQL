@@ -40,6 +40,7 @@ const noteCategory = $("#noteCategory");
 const noteSubCategory = $("#noteSubCategory");
 const notePriority = $("#notePriority");
 const noteDate = $("#noteDate");
+const noteTime = $("#noteTime");
 const noteColor = $("#noteColor");
 const noteTags = $("#noteTags");
 const noteText = $("#noteText");
@@ -379,7 +380,7 @@ function renderNotesTable() {
       <td class="td-note">${esc(preview)}${n.note_text.length > 120 ? "…" : ""}</td>
       <td class="td-cat">${esc(catSub)}</td>
       <td class="td-priority"><span class="priority-badge">${n.priority}</span></td>
-      <td class="td-date">${n.note_date}</td>
+      <td class="td-date">${n.note_date}${n.note_time ? ' ' + n.note_time : ''}</td>
       <td class="td-tags">${tags || "—"}</td>
     </tr>`;
   }).join("");
@@ -424,7 +425,7 @@ function renderNotesCards() {
       <div class="card-preview">${thumbs ? '<div class="card-thumbs">' + thumbs + (extraCount > 0 ? `<span class="card-thumbs-more">+${extraCount}</span>` : '') + '</div>' : ''}${esc(preview)}</div>
       <div class="card-meta">
         <span class="priority-badge">${n.priority}</span>
-        <span class="date">${n.note_date}</span>
+        <span class="date">${n.note_date}${n.note_time ? ' ' + n.note_time : ''}</span>
         ${tags}
         <div class="card-actions">
           <button class="archive-card" title="${n.is_archived ? 'Restore' : 'Archive'}">${n.is_archived ? '&#x21B6;' : '&#x1F4E5;'}</button>
@@ -469,10 +470,13 @@ function renderNotesFull() {
 
   fullBody.innerHTML = state.notes.map((n) => {
     const text = n.note_text.replace(/<[^>]*>/g, "");
+    const thumb = (n.images || []).length > 0
+      ? `<img class="image-preview-thumb" src="${esc(n.images[0].url)}" alt="" loading="lazy">`
+      : "";
     return `<tr class="priority-${n.priority}${n.is_archived ? ' archived' : ''}" data-id="${n.id}">
       <td class="td-title">${esc(n.title)}${n.is_archived ? ' <span class="archived-badge">archived</span>' : ''}</td>
-      <td class="td-note-full">${esc(text)}</td>
-      <td class="td-date">${n.note_date}</td>
+      <td class="td-note-full">${thumb} ${esc(text)}</td>
+      <td class="td-date">${n.note_date}${n.note_time ? ' ' + n.note_time : ''}</td>
     </tr>`;
   }).join("");
 
@@ -488,6 +492,7 @@ async function openNoteModal(id = null) {
   noteId.value = "";
   modalTitle.textContent = "New Note";
   noteDate.value = new Date().toISOString().split("T")[0];
+  noteTime.value = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   noteColor.value = "#4f46e5";
   notePriority.value = "medium";
 
@@ -501,6 +506,7 @@ async function openNoteModal(id = null) {
     noteSubCategory.value = note.sub_category_id || "";
     notePriority.value = note.priority;
     noteDate.value = note.note_date;
+    noteTime.value = note.note_time || "";
     noteColor.value = note.color || "#4f46e5";
     noteTags.value = note.tags || "";
     noteText.value = note.note_text;
@@ -617,6 +623,7 @@ noteForm.addEventListener("submit", async (e) => {
     title: noteTitle.value.trim(),
     note_text: noteText.value.trim(),
     note_date: noteDate.value,
+    note_time: noteTime.value || null,
     priority: notePriority.value,
     color: noteColor.value,
     tags: noteTags.value.trim(),

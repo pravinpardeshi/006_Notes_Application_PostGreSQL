@@ -44,6 +44,11 @@ with engine.connect() as conn:
             )
         except Exception:
             pass
+    # Add note_time column if missing (schema migration for existing databases)
+    try:
+        conn.execute(text("ALTER TABLE notes ADD COLUMN note_time VARCHAR(5)"))
+    except Exception:
+        pass
     conn.commit()
 
 app = FastAPI(title="Notes App")

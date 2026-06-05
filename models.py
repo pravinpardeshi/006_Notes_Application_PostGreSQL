@@ -58,6 +58,7 @@ class Note(Base):
         Integer, ForeignKey("sub_categories.id", ondelete="SET NULL"), nullable=True
     )
     note_date = Column(Date, server_default=func.current_date())
+    note_time = Column(String(5), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
