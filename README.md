@@ -234,4 +234,4 @@ Images are stored on disk in the `uploads/` directory and served via `/uploads/`
 | `images`      | array   | Attached image files (uploaded via modal)  |
 
 ## License
-Available user MIT license
+Available under user MIT license
