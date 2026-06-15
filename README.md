@@ -33,7 +33,7 @@ A sleek, modern notes-taking application built with **FastAPI** (backend) and va
 | Backend  | Python 3.11+, FastAPI, SQLAlchemy           |
 | Frontend | HTML5, CSS3 (custom properties), Vanilla JS |
 | Database | PostgreSQL                                  |
-| OS       | Linux (tested), macOS, WSL                  |
+| OS       | Linux (tested), macOS, Windows              |
 
 ## Getting Started
 
