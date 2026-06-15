@@ -44,9 +44,9 @@ const noteTime = $("#noteTime");
 const noteColor = $("#noteColor");
 const noteTags = $("#noteTags");
 const noteText = $("#noteText");
-const imageGrid = $("#imageGrid");
-const imageInput = $("#imageInput");
-const imageUploadArea = $("#imageUploadArea");
+const attachmentGrid = $("#attachmentGrid");
+const attachmentInput = $("#attachmentInput");
+const attachmentUploadArea = $("#attachmentUploadArea");
 const modalClose = $("#modalClose");
 const modalCancel = $("#modalCancel");
 const modalPrev = $("#modalPrev");
@@ -362,7 +362,9 @@ function renderNotesTable() {
     const catSub = [cat?.name, sub?.name].filter(Boolean).join(" / ") || "—";
     const preview = n.note_text.replace(/<[^>]*>/g, "").substring(0, 120);
     const tags = (n.tags || "").split(",").filter(Boolean).map((t) => `<span class="tag">${esc(t.trim())}</span>`).join("");
-    const thumbs = (n.images || []).slice(0, 3).map((img) =>
+    const hasAttachments = (n.attachments || []).length > 0;
+    const attClip = hasAttachments ? '<svg class="attachment-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>' : '';
+    const thumbs = (n.attachments || []).filter((a) => /\.(jpg|jpeg|png|gif|webp|bmp|svg|ico)$/i.test(a.filename)).slice(0, 3).map((img) =>
       `<img class="image-preview-thumb" src="${esc(img.url)}" alt="" loading="lazy">`
     ).join("");
     return `<tr class="priority-${n.priority}${n.is_archived ? ' archived' : ''}" data-id="${n.id}" data-title="${esc(n.title)}">
@@ -376,7 +378,7 @@ function renderNotesTable() {
         </button>
         <button class="delete-note" title="Delete">&times;</button>
       </td>
-      <td class="td-title">${thumbs} ${esc(n.title)}${n.is_archived ? ' <span class="archived-badge">archived</span>' : ''}</td>
+      <td class="td-title">${thumbs} ${attClip} ${esc(n.title)}${n.is_archived ? ' <span class="archived-badge">archived</span>' : ''}</td>
       <td class="td-note">${esc(preview)}${n.note_text.length > 120 ? "…" : ""}</td>
       <td class="td-cat">${esc(catSub)}</td>
       <td class="td-priority"><span class="priority-badge">${n.priority}</span></td>
@@ -416,12 +418,15 @@ function renderNotesCards() {
     const pClass = `priority-${n.priority}`;
     const preview = n.note_text.replace(/<[^>]*>/g, "").substring(0, 150);
     const tags = (n.tags || "").split(",").filter(Boolean).map((t) => `<span class="tag">${esc(t.trim())}</span>`).join("");
-    const thumbs = (n.images || []).slice(0, 2).map((img) =>
+    const noteImages = (n.attachments || []).filter((a) => /\.(jpg|jpeg|png|gif|webp|bmp|svg|ico)$/i.test(a.filename));
+    const thumbs = noteImages.slice(0, 2).map((img) =>
       `<img class="image-preview-thumb" src="${esc(img.url)}" alt="" loading="lazy">`
     ).join("");
-    const extraCount = (n.images || []).length - 2;
+    const extraCount = noteImages.length - 2;
+    const hasAttachments = (n.attachments || []).length > 0;
+    const attClip = hasAttachments ? '<svg class="attachment-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>' : '';
     return `<div class="note-card ${pClass}${n.is_archived ? ' archived' : ''}" data-id="${n.id}" style="border-left:3px solid ${n.color || 'transparent'}">
-      <div class="card-title">${esc(n.title)}${n.is_archived ? ' <span class="archived-badge">archived</span>' : ''}</div>
+      <div class="card-title">${attClip} ${esc(n.title)}${n.is_archived ? ' <span class="archived-badge">archived</span>' : ''}</div>
       <div class="card-preview">${thumbs ? '<div class="card-thumbs">' + thumbs + (extraCount > 0 ? `<span class="card-thumbs-more">+${extraCount}</span>` : '') + '</div>' : ''}${esc(preview)}</div>
       <div class="card-meta">
         <span class="priority-badge">${n.priority}</span>
@@ -470,11 +475,14 @@ function renderNotesFull() {
 
   fullBody.innerHTML = state.notes.map((n) => {
     const text = n.note_text.replace(/<[^>]*>/g, "");
-    const thumb = (n.images || []).length > 0
-      ? `<img class="image-preview-thumb" src="${esc(n.images[0].url)}" alt="" loading="lazy">`
+    const firstImg = (n.attachments || []).find((a) => /\.(jpg|jpeg|png|gif|webp|bmp|svg|ico)$/i.test(a.filename));
+    const thumb = firstImg
+      ? `<img class="image-preview-thumb" src="${esc(firstImg.url)}" alt="" loading="lazy">`
       : "";
+    const hasAttachments = (n.attachments || []).length > 0;
+    const attClip = hasAttachments ? '<svg class="attachment-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>' : '';
     return `<tr class="priority-${n.priority}${n.is_archived ? ' archived' : ''}" data-id="${n.id}">
-      <td class="td-title">${esc(n.title)}${n.is_archived ? ' <span class="archived-badge">archived</span>' : ''}</td>
+      <td class="td-title">${attClip} ${esc(n.title)}${n.is_archived ? ' <span class="archived-badge">archived</span>' : ''}</td>
       <td class="td-note-full">${thumb} ${esc(text)}</td>
       <td class="td-date">${n.note_date}${n.note_time ? ' ' + n.note_time : ''}</td>
     </tr>`;
@@ -512,10 +520,10 @@ async function openNoteModal(id = null) {
     noteText.value = note.note_text;
 
     currentNoteIndex = state.notes.findIndex((n) => n.id === id);
-    await loadNoteImages(note.id);
+    await loadNoteAttachments(note.id);
   } else {
     currentNoteIndex = -1;
-    imageGrid.innerHTML = "";
+    attachmentGrid.innerHTML = "";
     if (state.selectedCategoryId) {
       noteCategory.value = state.selectedCategoryId;
       await populateSubCategoryDropdown(state.selectedCategoryId);
@@ -542,77 +550,128 @@ function closeNoteModal() {
   noteModal.classList.remove("active");
 }
 
-/* ── Note Images ──────────────────────────────────────────────────────────── */
-let pendingImageFiles = [];
+/* ── Note Attachments ─────────────────────────────────────────────────────── */
+let pendingAttachmentFiles = [];
 
-async function loadNoteImages(noteId) {
-  imageGrid.innerHTML = "";
-  pendingImageFiles = [];
+async function loadNoteAttachments(noteId) {
+  attachmentGrid.innerHTML = "";
+  pendingAttachmentFiles = [];
   try {
-    const images = await api.get(`/api/notes/${noteId}/images`);
-    images.forEach((img) => addImageToGrid(img.url, img.filename, img.id));
+    const attachments = await api.get(`/api/notes/${noteId}/attachments`);
+    attachments.forEach((att) => addAttachmentToGrid(att.url, att.filename, att.id));
   } catch {
-    // no images yet
+    // no attachments yet
   }
 }
 
-function addImageToGrid(url, filename, imageId = null) {
+function getFileExtension(filename) {
+  return filename.split(".").pop().toLowerCase();
+}
+
+function isImageFile(filename) {
+  return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "ico"].includes(getFileExtension(filename));
+}
+
+function getFileTypeSvg(ext) {
+  const icons = {
+    pdf: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#ef4444"/><path d="M9 15h6" stroke="#ef4444"/><path d="M12 12v6" stroke="#ef4444"/></svg>',
+    doc: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#2563eb"/><line x1="16" y1="13" x2="8" y2="13" stroke="#2563eb"/><line x1="16" y1="17" x2="8" y2="17" stroke="#2563eb"/></svg>',
+    docx: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#2563eb"/><line x1="16" y1="13" x2="8" y2="13" stroke="#2563eb"/><line x1="16" y1="17" x2="8" y2="17" stroke="#2563eb"/></svg>',
+    xls: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#16a34a"/><path d="M8 13l2 3-2 3" stroke="#16a34a"/><path d="M16 13l-2 3 2 3" stroke="#16a34a"/></svg>',
+    xlsx: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#16a34a"/><path d="M8 13l2 3-2 3" stroke="#16a34a"/><path d="M16 13l-2 3 2 3" stroke="#16a34a"/></svg>',
+    txt: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#6b7280"/><line x1="16" y1="13" x2="8" y2="13" stroke="#6b7280"/><line x1="16" y1="17" x2="8" y2="17" stroke="#6b7280"/></svg>',
+    csv: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#16a34a"/><path d="M8 13l2 3-2 3" stroke="#16a34a"/><path d="M16 13l-2 3 2 3" stroke="#16a34a"/></svg>',
+    zip: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#f59e0b"/><path d="M12 12v4" stroke="#f59e0b"/><path d="M9 15l3-3 3 3" stroke="#f59e0b"/></svg>',
+    gz: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#f59e0b"/><path d="M12 12v4" stroke="#f59e0b"/><path d="M9 15l3-3 3 3" stroke="#f59e0b"/></svg>',
+    tar: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#f59e0b"/><path d="M12 12v4" stroke="#f59e0b"/><path d="M9 15l3-3 3 3" stroke="#f59e0b"/></svg>',
+    sh: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#10b981"/><path d="M10 13l2 2-2 2" stroke="#10b981"/><path d="M14 17h-4" stroke="#10b981"/></svg>',
+    py: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#f59e0b"/><path d="M10 13l2 2-2 2" stroke="#f59e0b"/><path d="M14 17h-4" stroke="#f59e0b"/></svg>',
+    js: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#eab308" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#eab308"/><path d="M10 15l2 2 4-4" stroke="#eab308"/></svg>',
+    html: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#ef4444"/><path d="M9 13l-2 2 2 2" stroke="#ef4444"/><path d="M15 13l2 2-2 2" stroke="#ef4444"/></svg>',
+    css: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#3b82f6"/><path d="M9 13l-2 2 2 2" stroke="#3b82f6"/><path d="M15 13l2 2-2 2" stroke="#3b82f6"/></svg>',
+    json: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#6b7280"/><path d="M10 12v4" stroke="#6b7280"/><path d="M14 12v4" stroke="#6b7280"/><path d="M8 14h2" stroke="#6b7280"/><path d="M14 14h2" stroke="#6b7280"/></svg>',
+    md: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#6b7280"/><line x1="8" y1="14" x2="12" y2="14" stroke="#6b7280"/><line x1="8" y1="17" x2="16" y2="17" stroke="#6b7280"/></svg>',
+    ppt: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#f97316"/><path d="M12 12v6" stroke="#f97316"/><path d="M9 15h6" stroke="#f97316"/></svg>',
+    pptx: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#f97316"/><path d="M12 12v6" stroke="#f97316"/><path d="M9 15h6" stroke="#f97316"/></svg>',
+    exe: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#6b7280"/><path d="M10 12l2 2-2 2" stroke="#6b7280"/><path d="M14 12l-2 2 2 2" stroke="#6b7280"/></svg>',
+    apk: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#22c55e"/><circle cx="9" cy="15" r="1" fill="#22c55e"/><circle cx="15" cy="15" r="1" fill="#22c55e"/><path d="M9 19c2 1 4 1 6 0" stroke="#22c55e"/></svg>',
+    deb: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#ef4444"/><path d="M9 15l3-3 3 3" stroke="#ef4444"/><path d="M12 12v6" stroke="#ef4444"/></svg>',
+    rpm: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#ef4444"/><path d="M9 15l3-3 3 3" stroke="#ef4444"/><path d="M12 12v6" stroke="#ef4444"/></svg>',
+    iso: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#6b7280"/><circle cx="12" cy="15" r="2" stroke="#6b7280"/><path d="M12 9v4" stroke="#6b7280"/></svg>',
+  };
+  return icons[ext] || '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8" stroke="#6b7280"/><line x1="16" y1="13" x2="8" y2="13" stroke="#6b7280"/><line x1="16" y1="17" x2="8" y2="17" stroke="#6b7280"/></svg>';
+}
+
+function addAttachmentToGrid(url, filename, attachmentId = null) {
   const div = document.createElement("div");
-  div.className = "image-item";
-  div.innerHTML = `
-    <img src="${url}" alt="${esc(filename)}" loading="lazy">
-    <button class="image-delete" title="Remove image">&times;</button>
-  `;
-  const imgEl = div.querySelector("img");
-  imgEl.addEventListener("click", (e) => {
-    e.stopPropagation();
-    lightboxImage.src = url;
-    lightbox.classList.add("active");
-  });
+  div.className = "image-item" + (isImageFile(filename) ? "" : " file");
+
+  if (isImageFile(filename)) {
+    div.innerHTML = `
+      <img src="${url}" alt="${esc(filename)}" loading="lazy">
+      <button class="image-delete" title="Remove file">&times;</button>
+      <div class="file-name">${esc(filename)}</div>
+    `;
+    const imgEl = div.querySelector("img");
+    imgEl.addEventListener("click", (e) => {
+      e.stopPropagation();
+      lightboxImage.src = url;
+      lightbox.classList.add("active");
+    });
+  } else {
+    const ext = getFileExtension(filename);
+    div.innerHTML = `
+      <div class="file-icon">${getFileTypeSvg(ext)}</div>
+      <div class="file-name">${esc(filename)}</div>
+      <button class="image-delete" title="Remove file">&times;</button>
+    `;
+    div.addEventListener("click", (e) => {
+      if (e.target.closest(".image-delete")) return;
+      window.open(url, "_blank");
+    });
+  }
 
   const delBtn = div.querySelector(".image-delete");
   delBtn.addEventListener("click", async (e) => {
     e.stopPropagation();
-    if (imageId) {
-      if (!confirm("Delete this image?")) return;
-      await api.del(`/api/notes/${noteId.value}/images/${imageId}`);
+    if (attachmentId) {
+      if (!confirm("Delete this attachment?")) return;
+      await api.del(`/api/notes/${noteId.value}/attachments/${attachmentId}`);
     }
     div.remove();
-    if (!imageId) {
-      const idx = pendingImageFiles.findIndex((f) => f.name === filename);
-      if (idx >= 0) pendingImageFiles.splice(idx, 1);
+    if (!attachmentId) {
+      const idx = pendingAttachmentFiles.findIndex((f) => f.name === filename);
+      if (idx >= 0) pendingAttachmentFiles.splice(idx, 1);
     }
   });
-  imageGrid.appendChild(div);
+  attachmentGrid.appendChild(div);
 }
 
-imageUploadArea.addEventListener("click", () => imageInput.click());
+attachmentUploadArea.addEventListener("click", () => attachmentInput.click());
 
-imageInput.addEventListener("change", () => {
-  for (const file of imageInput.files) {
-    if (!file.type.startsWith("image/")) continue;
-    pendingImageFiles.push(file);
+attachmentInput.addEventListener("change", () => {
+  for (const file of attachmentInput.files) {
+    pendingAttachmentFiles.push(file);
     const url = URL.createObjectURL(file);
-    addImageToGrid(url, file.name);
+    addAttachmentToGrid(url, file.name);
   }
-  imageInput.value = "";
+  attachmentInput.value = "";
 });
 
-imageUploadArea.addEventListener("dragover", (e) => {
+attachmentUploadArea.addEventListener("dragover", (e) => {
   e.preventDefault();
-  imageUploadArea.classList.add("drag-over");
+  attachmentUploadArea.classList.add("drag-over");
 });
-imageUploadArea.addEventListener("dragleave", () => {
-  imageUploadArea.classList.remove("drag-over");
+attachmentUploadArea.addEventListener("dragleave", () => {
+  attachmentUploadArea.classList.remove("drag-over");
 });
-imageUploadArea.addEventListener("drop", (e) => {
+attachmentUploadArea.addEventListener("drop", (e) => {
   e.preventDefault();
-  imageUploadArea.classList.remove("drag-over");
+  attachmentUploadArea.classList.remove("drag-over");
   for (const file of e.dataTransfer.files) {
-    if (!file.type.startsWith("image/")) continue;
-    pendingImageFiles.push(file);
+    pendingAttachmentFiles.push(file);
     const url = URL.createObjectURL(file);
-    addImageToGrid(url, file.name);
+    addAttachmentToGrid(url, file.name);
   }
 });
 
@@ -639,11 +698,11 @@ noteForm.addEventListener("submit", async (e) => {
     noteId.value = created.id;
   }
 
-  if (pendingImageFiles.length > 0 && noteId.value) {
+  if (pendingAttachmentFiles.length > 0 && noteId.value) {
     const formData = new FormData();
-    pendingImageFiles.forEach((f) => formData.append("files", f));
-    await fetch(`/api/notes/${noteId.value}/images`, { method: "POST", body: formData });
-    pendingImageFiles = [];
+    pendingAttachmentFiles.forEach((f) => formData.append("files", f));
+    await fetch(`/api/notes/${noteId.value}/attachments`, { method: "POST", body: formData });
+    pendingAttachmentFiles = [];
   }
 
   closeNoteModal();

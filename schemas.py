@@ -99,7 +99,7 @@ class NoteUpdate(BaseModel):
         return v
 
 
-class NoteImageResponse(BaseModel):
+class NoteAttachmentResponse(BaseModel):
     id: int
     note_id: int
     filename: str
@@ -113,6 +113,6 @@ class NoteResponse(NoteBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    images: list[NoteImageResponse] = []
+    attachments: list[NoteAttachmentResponse] = []
 
     model_config = {"from_attributes": True}

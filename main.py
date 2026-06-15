@@ -21,12 +21,12 @@ from sqlalchemy.orm import Session
 
 from config import BACKUP_DIR, DATABASE_URL, UPLOAD_DIR
 from database import Base, engine, get_db, SessionLocal
-from models import Category, Note, NoteImage, SubCategory
+from models import Category, Note, NoteAttachment, SubCategory
 from schemas import (
     CategoryCreate,
     CategoryResponse,
+    NoteAttachmentResponse,
     NoteCreate,
-    NoteImageResponse,
     NoteResponse,
     NoteUpdate,
     SubCategoryCreate,
@@ -37,7 +37,7 @@ Base.metadata.create_all(bind=engine)
 
 # Sync all SERIAL sequences to prevent duplicate-key errors after restore/manual inserts
 with engine.connect() as conn:
-    for tbl in ["categories", "sub_categories", "notes", "note_images"]:
+    for tbl in ["categories", "sub_categories", "notes", "note_attachments"]:
         try:
             conn.execute(
                 text(f"SELECT setval(pg_get_serial_sequence('{tbl}', 'id'), COALESCE(MAX(id), 1)) FROM {tbl}")
@@ -47,6 +47,11 @@ with engine.connect() as conn:
     # Add note_time column if missing (schema migration for existing databases)
     try:
         conn.execute(text("ALTER TABLE notes ADD COLUMN note_time VARCHAR(5)"))
+    except Exception:
+        pass
+    # Rename note_images -> note_attachments (migration for existing databases)
+    try:
+        conn.execute(text("ALTER TABLE note_images RENAME TO note_attachments"))
     except Exception:
         pass
     conn.commit()
@@ -71,10 +76,10 @@ def _compute_change_key() -> str:
     try:
         latest_updated = db.query(func.max(Note.updated_at)).scalar()
         note_count = db.query(func.count(Note.id)).scalar()
-        image_count = db.query(func.count(NoteImage.id)).scalar()
+        attachment_count = db.query(func.count(NoteAttachment.id)).scalar()
         cat_count = db.query(func.count(Category.id)).scalar()
         return hashlib.sha256(
-            f"{latest_updated}:{note_count}:{image_count}:{cat_count}".encode()
+            f"{latest_updated}:{note_count}:{attachment_count}:{cat_count}".encode()
         ).hexdigest()
     finally:
         db.close()
@@ -518,46 +523,46 @@ def delete_note(note_id: int, db: Session = Depends(get_db)):
     note = db.query(Note).filter(Note.id == note_id).first()
     if not note:
         raise HTTPException(404, "Note not found")
-    _cleanup_note_images(note.images)
+    _cleanup_note_attachments(note.attachments)
     db.delete(note)
     db.commit()
 
 
-def _cleanup_note_images(images: list[NoteImage]):
-    for img in images:
+def _cleanup_note_attachments(attachments: list[NoteAttachment]):
+    for att in attachments:
         try:
-            if os.path.exists(img.filepath):
-                os.remove(img.filepath)
+            if os.path.exists(att.filepath):
+                os.remove(att.filepath)
         except Exception:
             pass
 
 
-def _image_url(img: NoteImage) -> str:
-    return f"/uploads/{os.path.basename(img.filepath)}"
+def _attachment_url(att: NoteAttachment) -> str:
+    return f"/uploads/{os.path.basename(att.filepath)}"
 
 
-# ── Note Image CRUD ──────────────────────────────────────────────────────────
+# ── Note Attachment CRUD ──────────────────────────────────────────────────────
 
 
-@app.get("/api/notes/{note_id}/images", response_model=List[NoteImageResponse])
-def list_note_images(note_id: int, db: Session = Depends(get_db)):
+@app.get("/api/notes/{note_id}/attachments", response_model=List[NoteAttachmentResponse])
+def list_note_attachments(note_id: int, db: Session = Depends(get_db)):
     note = db.query(Note).filter(Note.id == note_id).first()
     if not note:
         raise HTTPException(404, "Note not found")
     return [
-        NoteImageResponse(
-            id=img.id,
-            note_id=img.note_id,
-            filename=img.filename,
-            url=_image_url(img),
-            created_at=img.created_at,
+        NoteAttachmentResponse(
+            id=att.id,
+            note_id=att.note_id,
+            filename=att.filename,
+            url=_attachment_url(att),
+            created_at=att.created_at,
         )
-        for img in note.images
+        for att in note.attachments
     ]
 
 
-@app.post("/api/notes/{note_id}/images", response_model=List[NoteImageResponse], status_code=201)
-def upload_note_images(
+@app.post("/api/notes/{note_id}/attachments", response_model=List[NoteAttachmentResponse], status_code=201)
+def upload_note_attachments(
     note_id: int,
     files: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
@@ -568,9 +573,6 @@ def upload_note_images(
 
     saved = []
     for file in files:
-        if not file.content_type or not file.content_type.startswith("image/"):
-            raise HTTPException(400, f"File '{file.filename}' is not an image")
-
         ts = datetime.now().strftime("%Y%m%d%H%M%S%f")
         safe_name = f"{ts}_{file.filename}"
         filepath = os.path.join(UPLOAD_DIR, safe_name)
@@ -578,35 +580,35 @@ def upload_note_images(
         with open(filepath, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        img = NoteImage(note_id=note_id, filename=file.filename, filepath=filepath)
-        db.add(img)
+        att = NoteAttachment(note_id=note_id, filename=file.filename, filepath=filepath)
+        db.add(att)
         db.commit()
-        db.refresh(img)
+        db.refresh(att)
         saved.append(
-            NoteImageResponse(
-                id=img.id,
-                note_id=img.note_id,
-                filename=img.filename,
-                url=_image_url(img),
-                created_at=img.created_at,
+            NoteAttachmentResponse(
+                id=att.id,
+                note_id=att.note_id,
+                filename=att.filename,
+                url=_attachment_url(att),
+                created_at=att.created_at,
             )
         )
 
     return saved
 
 
-@app.delete("/api/notes/{note_id}/images/{image_id}", status_code=204)
-def delete_note_image(note_id: int, image_id: int, db: Session = Depends(get_db)):
+@app.delete("/api/notes/{note_id}/attachments/{attachment_id}", status_code=204)
+def delete_note_attachment(note_id: int, attachment_id: int, db: Session = Depends(get_db)):
     note = db.query(Note).filter(Note.id == note_id).first()
     if not note:
         raise HTTPException(404, "Note not found")
-    img = db.query(NoteImage).filter(NoteImage.id == image_id, NoteImage.note_id == note_id).first()
-    if not img:
-        raise HTTPException(404, "Image not found")
+    att = db.query(NoteAttachment).filter(NoteAttachment.id == attachment_id, NoteAttachment.note_id == note_id).first()
+    if not att:
+        raise HTTPException(404, "Attachment not found")
     try:
-        if os.path.exists(img.filepath):
-            os.remove(img.filepath)
+        if os.path.exists(att.filepath):
+            os.remove(att.filepath)
     except Exception:
         pass
-    db.delete(img)
+    db.delete(att)
     db.commit()
